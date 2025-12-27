@@ -1,0 +1,39 @@
+{
+    "name": "optimizepress/pushlapgrowth",
+    "description": "A PHP client for the PushLapGrowth API",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "OptimizePress",
+            "email": "support@optimizepress.com"
+        }
+    ],
+    "require": {
+        "php": "^7.4 || ^8.0",
+        "guzzlehttp/guzzle": "^7.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "PushLapGrowth\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PushLapGrowth\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "PushLapGrowth\\PushLapGrowthServiceProvider"
+            ]
+        }
+    },
+    "suggest": {
+        "laravel/framework": "To use the ServiceProvider and Config"
+    }
+}
