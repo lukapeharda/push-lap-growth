@@ -3,9 +3,14 @@
 namespace PushLapGrowth;
 
 use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
 use PushLapGrowth\DTO\CreateSaleData;
 use PushLapGrowth\DTO\UpdateSaleData;
+use PushLapGrowth\Exceptions\ApiException;
+use PushLapGrowth\Exceptions\NotFoundException;
+use PushLapGrowth\Exceptions\PushLapGrowthException;
+use PushLapGrowth\Exceptions\ValidationException;
 
 class Client
 {
@@ -15,18 +20,24 @@ class Client
     protected $client;
 
     /**
+     * @var string
+     */
+    protected $apiToken;
+
+    /**
      * @param string $apiToken The API token for authentication.
      * @param GuzzleClient|null $client Optional Guzzle client for testing/customization.
      */
     public function __construct(string $apiToken, ?GuzzleClient $client = null)
     {
+        $this->apiToken = $apiToken;
         $this->client = $client ?? new GuzzleClient([
             'base_uri' => 'https://www.pushlapgrowth.com/api/v1/',
             'headers' => [
-                'Authorization' => 'Bearer ' . $apiToken,
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
             ],
+            'http_errors' => true, // Ensure Guzzle throws exceptions on 4xx/5xx
         ]);
     }
 
@@ -35,15 +46,13 @@ class Client
      *
      * @param CreateSaleData $data The sale data.
      * @return array The response data.
-     * @throws GuzzleException
+     * @throws PushLapGrowthException
      */
     public function createSale(CreateSaleData $data): array
     {
-        $response = $this->client->post('sales', [
+        return $this->request('POST', 'sales', [
             'json' => $data->toArray(),
         ]);
-
-        return json_decode($response->getBody()->getContents(), true);
     }
 
     /**
@@ -51,15 +60,13 @@ class Client
      *
      * @param UpdateSaleData $data The update data.
      * @return array The response data.
-     * @throws GuzzleException
+     * @throws PushLapGrowthException
      */
     public function updateSale(UpdateSaleData $data): array
     {
-        $response = $this->client->put('sales', [
+        return $this->request('PUT', 'sales', [
             'json' => $data->toArray(),
         ]);
-
-        return json_decode($response->getBody()->getContents(), true);
     }
 
     /**
@@ -67,15 +74,13 @@ class Client
      *
      * @param int $saleId The ID of the sale to delete.
      * @return array The response data.
-     * @throws GuzzleException
+     * @throws PushLapGrowthException
      */
     public function deleteSale(int $saleId): array
     {
-        $response = $this->client->delete('sales', [
+        return $this->request('DELETE', 'sales', [
             'json' => ['saleId' => $saleId],
         ]);
-
-        return json_decode($response->getBody()->getContents(), true);
     }
 
     /**
@@ -83,23 +88,17 @@ class Client
      *
      * @param string $externalId The external ID of the sale.
      * @return array The sale data.
-     * @throws \Exception If the sale is not found.
-     * @throws GuzzleException
+     * @throws PushLapGrowthException If the sale is not found.
      */
     public function getSaleByExternalId(string $externalId): array
     {
-        $response = $this->client->get('sales', [
+        $data = $this->request('GET', 'sales', [
             'query' => ['saleExternalId' => $externalId],
         ]);
 
-        $data = json_decode($response->getBody()->getContents(), true);
-
         // The API returns an array of sales. We expect one if using unique external ID.
-        // Assuming the response structure is a list or contains a list.
-        // Based on docs, it returns a list of matching sales.
-
         if (empty($data) || !isset($data[0])) {
-            throw new \Exception("Sale with external ID '{$externalId}' not found.");
+            throw new NotFoundException("Sale with external ID '{$externalId}' not found.");
         }
 
         return $data[0];
@@ -110,8 +109,7 @@ class Client
      *
      * @param string $externalId The external ID of the sale.
      * @return array The response data.
-     * @throws GuzzleException
-     * @throws \Exception
+     * @throws PushLapGrowthException
      */
     public function deleteSaleUsingExternalId(string $externalId): array
     {
@@ -125,8 +123,7 @@ class Client
      * @param string $externalId The external ID of the sale.
      * @param UpdateSaleData $data The update data.
      * @return array The response data.
-     * @throws GuzzleException
-     * @throws \Exception
+     * @throws PushLapGrowthException
      */
     public function updateSaleUsingExternalId(string $externalId, UpdateSaleData $data): array
     {
@@ -136,5 +133,45 @@ class Client
         $data->saleId = $sale['id'];
 
         return $this->updateSale($data);
+    }
+
+    /**
+     * Make a request to the API and handle exceptions.
+     *
+     * @param string $method
+     * @param string $uri
+     * @param array $options
+     * @return array
+     * @throws PushLapGrowthException
+     */
+    protected function request(string $method, string $uri, array $options = []): array
+    {
+        // Force Authorization header
+        $options['headers']['Authorization'] = 'Bearer ' . $this->apiToken;
+
+        try {
+            $response = $this->client->request($method, $uri, $options);
+            return json_decode($response->getBody()->getContents(), true);
+        } catch (ClientException $e) {
+            $statusCode = $e->getResponse()->getStatusCode();
+            $body = $e->getResponse()->getBody()->getContents();
+            $data = json_decode($body, true) ?? [];
+            $message = $data['message'] ?? $e->getMessage();
+
+            if ($statusCode === 404) {
+                throw new NotFoundException($message, $statusCode);
+            }
+
+            if ($statusCode === 422) {
+                $errors = $data['errors'] ?? [];
+                throw new ValidationException($message, $errors, $statusCode);
+            }
+
+            throw new ApiException($message, $statusCode);
+        } catch (GuzzleException $e) {
+            throw new ApiException($e->getMessage(), $e->getCode());
+        } catch (\Exception $e) {
+            throw new ApiException($e->getMessage(), $e->getCode());
+        }
     }
 }

@@ -1,12 +1,12 @@
 {
-    "name": "optimizepress/pushlapgrowth",
+    "name": "lukapeharda/pushlapgrowth",
     "description": "A PHP client for the PushLapGrowth API",
     "type": "library",
     "license": "MIT",
     "authors": [
         {
-            "name": "OptimizePress",
-            "email": "support@optimizepress.com"
+            "name": "Luka Peharda",
+            "email": "luka.peharda@gmail.com"
         }
     ],
     "require": {

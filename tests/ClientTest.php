@@ -152,4 +152,43 @@ class ClientTest extends TestCase
         $this->assertEquals(888, $body['saleId']);
         $this->assertEquals(200, $body['totalEarned']);
     }
+
+    public function testNotFoundException()
+    {
+        $this->mockHandler->append(new Response(404, [], json_encode(['message' => 'Sale not found'])));
+
+        $this->expectException(\PushLapGrowth\Exceptions\NotFoundException::class);
+        $this->expectExceptionMessage('Sale not found');
+
+        $this->client->deleteSale(999);
+    }
+
+    public function testValidationException()
+    {
+        $this->mockHandler->append(new Response(422, [], json_encode([
+            'message' => 'Validation failed',
+            'errors' => ['email' => ['Email is required']]
+        ])));
+
+        $this->expectException(\PushLapGrowth\Exceptions\ValidationException::class);
+        $this->expectExceptionMessage('Validation failed');
+
+        try {
+            $data = new CreateSaleData(100.0);
+            $this->client->createSale($data);
+        } catch (\PushLapGrowth\Exceptions\ValidationException $e) {
+            $this->assertEquals(['email' => ['Email is required']], $e->getErrors());
+            throw $e;
+        }
+    }
+
+    public function testApiException()
+    {
+        $this->mockHandler->append(new Response(500, [], json_encode(['message' => 'Server error'])));
+
+        $this->expectException(\PushLapGrowth\Exceptions\ApiException::class);
+        $this->expectExceptionMessage('Server error');
+
+        $this->client->deleteSale(123);
+    }
 }
