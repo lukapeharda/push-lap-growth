@@ -23,12 +23,23 @@ You can use the client in any PHP application by instantiating the `Client` clas
 use PushLapGrowth\Client;
 use PushLapGrowth\DTO\CreateSaleData;
 use PushLapGrowth\DTO\UpdateSaleData;
+use PushLapGrowth\DTO\CreateReferralData;
 use PushLapGrowth\Exceptions\ValidationException;
 
 // Initialize Client
 $client = new Client('YOUR_API_TOKEN');
 
 try {
+    // 0. Create a Referral
+    $referralData = new CreateReferralData(
+        'John Doe',
+        'john@example.com',
+        'ext_123', // referredUserExternalId
+        'aff_abc'  // affiliateId (optional)
+        // ... options: affiliateEmail, promoCode, plan, status
+    );
+    $client->createReferral($referralData);
+
     // 1. Create a Sale
     $data = new CreateSaleData(
         100.0,          // totalEarned

@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use PushLapGrowth\Client;
 use PushLapGrowth\DTO\CreateSaleData;
 use PushLapGrowth\DTO\UpdateSaleData;
+use PushLapGrowth\DTO\CreateReferralData;
 
 class ClientTest extends TestCase
 {
@@ -31,6 +32,33 @@ class ClientTest extends TestCase
         $guzzleClient = new GuzzleClient(['handler' => $handlerStack]);
 
         $this->client = new Client('test-token', $guzzleClient);
+    }
+
+    public function testCreateReferral()
+    {
+        $this->mockHandler->append(new Response(201, [], json_encode(['status' => 'success', 'id' => 999])));
+
+        $data = new CreateReferralData(
+            'John Doe',
+            'john@example.com',
+            'ext_user_1',
+            'aff_123'
+        );
+        $result = $this->client->createReferral($data);
+
+        $this->assertEquals(['status' => 'success', 'id' => 999], $result);
+
+        // Verify request
+        $this->assertCount(1, $this->container);
+        $request = $this->container[0]['request'];
+        $this->assertEquals('POST', $request->getMethod());
+        $this->assertEquals('referrals', $request->getUri()->getPath());
+
+        $body = json_decode($request->getBody(), true);
+        $this->assertEquals('John Doe', $body['name']);
+        $this->assertEquals('john@example.com', $body['email']);
+        $this->assertEquals('ext_user_1', $body['referredUserExternalId']);
+        $this->assertEquals('aff_123', $body['affiliateId']);
     }
 
     public function testCreateSale()

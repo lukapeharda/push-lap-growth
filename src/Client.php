@@ -6,6 +6,7 @@ use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
 use PushLapGrowth\DTO\CreateSaleData;
+use PushLapGrowth\DTO\CreateReferralData;
 use PushLapGrowth\DTO\UpdateSaleData;
 use PushLapGrowth\Exceptions\ApiException;
 use PushLapGrowth\Exceptions\NotFoundException;
@@ -133,6 +134,20 @@ class Client
         $data->saleId = $sale['id'];
 
         return $this->updateSale($data);
+    }
+
+    /**
+     * Create a new referral.
+     *
+     * @param CreateReferralData $data The referral data.
+     * @return array The response data.
+     * @throws PushLapGrowthException
+     */
+    public function createReferral(CreateReferralData $data): array
+    {
+        return $this->request('POST', 'referrals', [
+            'json' => $data->toArray(),
+        ]);
     }
 
     /**
