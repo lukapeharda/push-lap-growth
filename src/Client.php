@@ -46,10 +46,10 @@ class Client
      * Create a new sale.
      *
      * @param CreateSaleData $data The sale data.
-     * @return array The response data.
+     * @return array|null The response data.
      * @throws PushLapGrowthException
      */
-    public function createSale(CreateSaleData $data): array
+    public function createSale(CreateSaleData $data): ?array
     {
         return $this->request('POST', 'sales', [
             'json' => $data->toArray(),
@@ -60,10 +60,10 @@ class Client
      * Update an existing sale.
      *
      * @param UpdateSaleData $data The update data.
-     * @return array The response data.
+     * @return array|null The response data.
      * @throws PushLapGrowthException
      */
-    public function updateSale(UpdateSaleData $data): array
+    public function updateSale(UpdateSaleData $data): ?array
     {
         return $this->request('PUT', 'sales', [
             'json' => $data->toArray(),
@@ -74,10 +74,10 @@ class Client
      * Delete a sale.
      *
      * @param int $saleId The ID of the sale to delete.
-     * @return array The response data.
+     * @return array|null The response data.
      * @throws PushLapGrowthException
      */
-    public function deleteSale(int $saleId): array
+    public function deleteSale(int $saleId): ?array
     {
         return $this->request('DELETE', 'sales', [
             'json' => ['saleId' => $saleId],
@@ -88,10 +88,10 @@ class Client
      * Get a sale by its external ID.
      *
      * @param string $externalId The external ID of the sale.
-     * @return array The sale data.
+     * @return array|null The sale data.
      * @throws PushLapGrowthException If the sale is not found.
      */
-    public function getSaleByExternalId(string $externalId): array
+    public function getSaleByExternalId(string $externalId): ?array
     {
         $data = $this->request('GET', 'sales', [
             'query' => ['saleExternalId' => $externalId],
@@ -109,12 +109,13 @@ class Client
      * Delete a sale using its external ID.
      *
      * @param string $externalId The external ID of the sale.
-     * @return array The response data.
+     * @return array|null The response data.
      * @throws PushLapGrowthException
      */
-    public function deleteSaleUsingExternalId(string $externalId): array
+    public function deleteSaleUsingExternalId(string $externalId): ?array
     {
         $sale = $this->getSaleByExternalId($externalId);
+
         return $this->deleteSale($sale['id']);
     }
 
@@ -123,10 +124,10 @@ class Client
      *
      * @param string $externalId The external ID of the sale.
      * @param UpdateSaleData $data The update data.
-     * @return array The response data.
+     * @return array|null The response data.
      * @throws PushLapGrowthException
      */
-    public function updateSaleUsingExternalId(string $externalId, UpdateSaleData $data): array
+    public function updateSaleUsingExternalId(string $externalId, UpdateSaleData $data): ?array
     {
         $sale = $this->getSaleByExternalId($externalId);
 
@@ -140,10 +141,10 @@ class Client
      * Create a new referral.
      *
      * @param CreateReferralData $data The referral data.
-     * @return array The response data.
+     * @return array|null The response data.
      * @throws PushLapGrowthException
      */
-    public function createReferral(CreateReferralData $data): array
+    public function createReferral(CreateReferralData $data): ?array
     {
         return $this->request('POST', 'referrals', [
             'json' => $data->toArray(),
@@ -156,10 +157,10 @@ class Client
      * @param string $method
      * @param string $uri
      * @param array $options
-     * @return array
+     * @return array|null
      * @throws PushLapGrowthException
      */
-    protected function request(string $method, string $uri, array $options = []): array
+    protected function request(string $method, string $uri, array $options = []): ?array
     {
         // Force Authorization header
         $options['headers']['Authorization'] = 'Bearer ' . $this->apiToken;
